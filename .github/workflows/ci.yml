@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-and-build:
+    name: Test & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      # ── Root dependencies (TypeScript types, fast-check, tsx) ────────────
+      - name: Install root dependencies
+        run: npm ci
+
+      # ── Contract compilation ──────────────────────────────────────────────
+      # The compact CLI is Midnight-specific tooling. If it is available in
+      # PATH (e.g. installed via a custom action or pre-installed image) the
+      # contract is compiled. Otherwise this step is skipped gracefully so
+      # the rest of the pipeline (unit/property tests, frontend build) still
+      # runs in standard CI environments.
+      - name: Compile Compact contract
+        run: |
+          if command -v compact &> /dev/null; then
+            compact compile contracts/event_eligibility_pass.compact \
+              contracts/managed/event_eligibility_pass
+          else
+            echo "compact CLI not found — skipping contract compilation."
+            echo "To enable, install the Midnight compact toolchain before this step."
+          fi
+
+      # ── TypeScript / property-based tests ────────────────────────────────
+      - name: Run tests
+        run: npm test
+
+      # ── Frontend ──────────────────────────────────────────────────────────
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build

@@ -1,0 +1,154 @@
+// Private Event Eligibility Pass (PEEP) — Compact Smart Contract
+// ================================================================
+//
+// PRIVACY MODEL
+// ─────────────
+// PUBLIC  (ledger):
+//   eventId          — unique identifier for the event
+//   eligibilityHash  — public commitment/hash of the eligibility requirement
+//                      (e.g., "must be a student"); verifiers can see which
+//                      credential type is required but NOT individual data
+//   eventActive      — whether the event is currently accepting passes
+//   passId           — unique identifier for an issued pass
+//   passActive       — true = ACTIVE, false = INVALID
+//   entryUsed        — false = NOT_USED, true = USED
+//
+// PRIVATE (witness — stays off-chain, in the proof system only):
+//   eligibilityWitness : Bytes<32>
+//     This is H(privateCredential). It is NEVER written to the ledger.
+//     The Eligibility Circuit checks it satisfies eligibilityHash.
+//     Only the boolean result (eligible = true) is disclosed.
+//
+// DISCLOSURE POLICY
+// ─────────────────
+//   disclose() is used ONLY to move:
+//     1. The eligibility boolean (true) → confirms eligibility without
+//        revealing the underlying witness or credential.
+//     2. The passId → links the issued pass to the on-chain record so
+//        the scanner can look it up without knowing who holds it.
+//   Everything else stays private.
+//
+// CIRCUITS
+// ────────
+//   createEvent                    — Organizer creates an event (public)
+//   verifyEligibilityAndIssuePass  — Participant proves eligibility; pass issued
+//   markPassUsed                   — Scanner marks an ACTIVE+NOT_USED pass as USED
+
+pragma language_version >= 0.14.0;
+
+// ─── Ledger (public on-chain state) ─────────────────────────────────────────
+
+ledger eventId: Opaque<"string">;
+ledger eligibilityHash: Opaque<"string">;
+ledger eventActive: Boolean;
+ledger passId: Opaque<"string">;
+ledger passActive: Boolean;
+ledger entryUsed: Boolean;
+
+// ─── Witnesses (private — never leave the proof system) ─────────────────────
+
+witness eligibilityWitness(): Bytes<32>;
+
+// ─── Circuits ────────────────────────────────────────────────────────────────
+
+// createEvent
+// -----------
+// Called by the Organizer to initialise the contract for a specific event.
+// All arguments are public; no private inputs required.
+//
+// Requirements: 2.1, 2.2, 2.3
+export circuit createEvent(
+  newEventId: Opaque<"string">,
+  newEligibilityHash: Opaque<"string">
+): [] {
+  // Write public event data to the ledger
+  eventId = newEventId;
+  eligibilityHash = newEligibilityHash;
+  // New event starts in ACTIVE state
+  eventActive = true;
+
+  // Pass fields start unset / default
+  passActive = false;
+  entryUsed = false;
+}
+
+// verifyEligibilityAndIssuePass
+// -----------------------------
+// Called by the Participant to prove eligibility and receive a Pass.
+//
+// Private flow (stays in the proof system):
+//   1. eligibilityWitness() provides H(privateCredential) privately.
+//   2. The circuit asserts witness == keccak(witness) is not needed —
+//      instead we verify: the hash of the witness matches eligibilityHash.
+//      This is the ZK check that proves the Participant holds the right
+//      credential without revealing it.
+//
+// Public flow (via disclose):
+//   - Disclosed: eligible (Boolean) — confirms eligibility result only
+//   - Disclosed: newPassId (Opaque<"string">) — links pass to ledger
+//
+// What remains private: the eligibilityWitness bytes themselves.
+//
+// Requirements: 1.1, 1.2, 1.3, 1.4, 3.1, 3.2, 5.1, 5.2
+export circuit verifyEligibilityAndIssuePass(
+  forEventId: Opaque<"string">,
+  newPassId: Opaque<"string">
+): [] {
+  // Guard: the event must exist and be active
+  assert eventActive "EVENT_NOT_ACTIVE";
+
+  // Obtain the private eligibility witness (stays in proof system)
+  const witness = eligibilityWitness();
+
+  // ZK eligibility check:
+  // We verify that the sha256 of the witness matches the stored eligibilityHash.
+  // The raw witness bytes are NEVER disclosed — only the boolean result is.
+  const witnessHash: Bytes<32> = sha256(witness);
+
+  // disclose(eligible) moves only the boolean to the public output.
+  // The witness itself is NOT disclosed — it stays private.
+  // This satisfies Requirements 1.1, 1.3, 5.2.
+  const eligible: Boolean = disclose(
+    persistent_hash<"string">(witnessHash) == eligibilityHash
+  );
+
+  // The eligibility assertion must hold; if not, the transaction is rejected
+  // and no ledger state is written. Requirements 1.2, 1.5.
+  assert eligible "ELIGIBILITY_FAILED";
+
+  // Issue the pass: write ONLY public identifiers to ledger.
+  // No PII (name, email, phone, studentId, college) is ever written.
+  // Requirements 3.3, 5.1.
+  passId = disclose(newPassId);   // passId is disclosed so scanner can look it up
+  passActive = true;              // ACTIVE
+  entryUsed = false;              // NOT_USED
+}
+
+// markPassUsed
+// ------------
+// Called by the Scanner to mark an ACTIVE+NOT_USED pass as USED (one-time entry).
+// Replay protection is enforced on-chain — cannot be bypassed by frontend logic.
+//
+// Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
+export circuit markPassUsed(
+  forPassId: Opaque<"string">,
+  forEventId: Opaque<"string">
+): [] {
+  // Guard: pass must be ACTIVE (not invalidated)
+  assert passActive "INVALID_PASS";
+
+  // Guard: pass must not have been used already (replay protection)
+  // Requirements 4.2, 4.4
+  assert !entryUsed "PASS_ALREADY_USED";
+
+  // Guard: the event ID must match the one recorded on this pass
+  // Requirements 4.5
+  assert forEventId == eventId "WRONG_EVENT";
+
+  // Guard: the pass ID must match the recorded pass
+  assert forPassId == passId "INVALID_PASS";
+
+  // Transition: mark the pass as USED
+  // Requirements 4.1
+  entryUsed = true;
+}

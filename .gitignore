@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Compiled Compact contract artifacts (generated — do not commit)
+contracts/managed/
+
+# Midnight deployment state (contains contract addresses; may contain wallet data)
+.midnight-state.json
+
+# Environment files (may contain API keys, wallet seeds, or private credentials)
+.env
+.env.local
+.env.*.local
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/

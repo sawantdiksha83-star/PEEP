@@ -1,0 +1,16 @@
+{
+  "name": "midnight-peep",
+  "version": "1.0.0",
+  "description": "Private Event Eligibility Pass — Midnight Network dApp",
+  "type": "module",
+  "scripts": {
+    "test": "node --import tsx/esm --test tests/**/*.test.ts",
+    "test:run": "node --import tsx/esm --test tests/**/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "fast-check": "^3.21.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}
