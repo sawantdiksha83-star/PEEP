@@ -135,7 +135,7 @@ export circuit markPassUsed(
   forEventId: Opaque<"string">
 ): [] {
   // Guard: pass must be ACTIVE (not invalidated)
-  assert passActive "INVALID_PASS";
+  assert (passActive, "INVALID_PASS");
 
   // Guard: pass must not have been used already (replay protection)
   // Requirements 4.2, 4.4
