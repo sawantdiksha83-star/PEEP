@@ -143,10 +143,10 @@ export circuit markPassUsed(
 
   // Guard: the event ID must match the one recorded on this pass
   // Requirements 4.5
-  assert forEventId == eventId "WRONG_EVENT";
+  assert(forEventId == eventId, "WRONG_EVENT");
 
   // Guard: the pass ID must match the recorded pass
-  assert forPassId == passId "INVALID_PASS";
+  assert(forPassId == passId, "INVALID_PASS");
 
   // Transition: mark the pass as USED
   // Requirements 4.1
