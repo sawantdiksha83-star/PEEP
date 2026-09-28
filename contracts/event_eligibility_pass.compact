@@ -62,8 +62,8 @@ export circuit createEvent(
   newEligibilityHash: Bytes<32>
 ): [] {
   // Write public event data to the ledger
-  eventId = newEventId;
-  eligibilityHash = newEligibilityHash;
+  eventId = disclose(newEventId);
+  eligibilityHash = disclose(newEligibilityHash);
   // New event starts in ACTIVE state
   eventActive = true;
 
