@@ -114,7 +114,7 @@ export circuit verifyEligibilityAndIssuePass(
 
   // The eligibility assertion must hold; if not, the transaction is rejected
   // and no ledger state is written. Requirements 1.2, 1.5.
-  assert eligible "ELIGIBILITY_FAILED";
+  assert (eligible, "ELIGIBILITY_FAILED");
 
   // Issue the pass: write ONLY public identifiers to ledger.
   // No PII (name, email, phone, studentId, college) is ever written.
