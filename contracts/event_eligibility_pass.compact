@@ -95,15 +95,15 @@ export circuit verifyEligibilityAndIssuePass(
   newPassId: Opaque<"string">
 ): [] {
   // Guard: the event must exist and be active
-  assert eventActive "EVENT_NOT_ACTIVE";
+  assert (eventActive, "EVENT_NOT_ACTIVE");
 
   // Obtain the private eligibility witness (stays in proof system)
-  const witness = eligibilityWitness();
+  const eligibilityWitnessValue = eligibilityWitness();
 
   // ZK eligibility check:
   // We verify that the sha256 of the witness matches the stored eligibilityHash.
   // The raw witness bytes are NEVER disclosed — only the boolean result is.
-  const witnessHash: Bytes<32> = sha256(witness);
+  const witnessHash: Bytes<32> = sha256(eligibilityWitnessValue);
 
   // disclose(eligible) moves only the boolean to the public output.
   // The witness itself is NOT disclosed — it stays private.
