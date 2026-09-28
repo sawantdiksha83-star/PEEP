@@ -109,7 +109,7 @@ export circuit verifyEligibilityAndIssuePass(
   // The witness itself is NOT disclosed — it stays private.
   // This satisfies Requirements 1.1, 1.3, 5.2.
   const eligible: Boolean = disclose(
-    persistent_hash<Opaque<"string">>(witnessHash) == eligibilityHash
+    witnessHash == eligibilityHash
   );
 
   // The eligibility assertion must hold; if not, the transaction is rejected
