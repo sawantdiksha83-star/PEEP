@@ -139,7 +139,7 @@ export circuit markPassUsed(
 
   // Guard: pass must not have been used already (replay protection)
   // Requirements 4.2, 4.4
-  assert !entryUsed "PASS_ALREADY_USED";
+  assert(!entryUsed, "PASS_ALREADY_USED");
 
   // Guard: the event ID must match the one recorded on this pass
   // Requirements 4.5
