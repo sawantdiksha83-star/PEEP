@@ -59,7 +59,7 @@ witness eligibilityWitness(): Bytes<32>;
 // Requirements: 2.1, 2.2, 2.3
 export circuit createEvent(
   newEventId: Opaque<"string">,
-  newEligibilityHash: Opaque<"string">
+  newEligibilityHash: Bytes<32>
 ): [] {
   // Write public event data to the ledger
   eventId = newEventId;
