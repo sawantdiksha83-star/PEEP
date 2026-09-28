@@ -39,7 +39,7 @@ pragma language_version >= 0.14.0;
 // ─── Ledger (public on-chain state) ─────────────────────────────────────────
 
 ledger eventId: Opaque<"string">;
-ledger eligibilityHash: Opaque<"string">;
+ledger eligibilityHash: Bytes<32>;
 ledger eventActive: Boolean;
 ledger passId: Opaque<"string">;
 ledger passActive: Boolean;
