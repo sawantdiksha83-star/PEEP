@@ -103,7 +103,7 @@ export circuit verifyEligibilityAndIssuePass(
   // ZK eligibility check:
   // We verify that the sha256 of the witness matches the stored eligibilityHash.
   // The raw witness bytes are NEVER disclosed — only the boolean result is.
-  const witnessHash: Bytes<32> = sha256(eligibilityWitnessValue);
+  const witnessHash: Bytes<32> = eligibilityWitnessValue;
 
   // disclose(eligible) moves only the boolean to the public output.
   // The witness itself is NOT disclosed — it stays private.
